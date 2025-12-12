@@ -1,4 +1,4 @@
-
+#!/bin/sh
 START_DIR=$(pwd)
 
 error_exit() {
