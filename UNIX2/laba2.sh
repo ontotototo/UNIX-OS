@@ -8,14 +8,14 @@ echo "Starting Container $CONTAINER_ID"
 
 LOCK_FILE="$DATA_DIR/.lockfile"
 
-for SEQ in $(seq 1 5); do
+for SEQ in $(seq 1 999); do
     TARGET_FILE=""
     FOUND=0
 
     {
         flock -x 33
         i=1
-        while [ $i -le 5 ]; do
+        while [ $i -le 999 ]; do
             NAME=$(printf "%03d" $i)
             FILE_PATH="$DATA_DIR/$NAME"
             if [ ! -e "$FILE_PATH" ]; then
