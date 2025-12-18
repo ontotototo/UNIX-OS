@@ -1,0 +1,6 @@
+FROM alpine:latest
+RUN apk add --no-cache util-linux
+COPY laba2.sh /laba2.sh
+RUN chmod +x /laba2.sh
+WORKDIR /data
+CMD ["/laba2.sh"]
