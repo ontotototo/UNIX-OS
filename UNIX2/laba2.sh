@@ -25,7 +25,7 @@ while true; do
             fi
             i=$((i+1))
         done
-    } 33>"$LOCK_FILE"
+    } 83>"$LOCK_FILE"
 
     echo "[Created] $TARGET_FILE (ID: $CONTAINER_ID, SEQ: $SEQ)"
 
