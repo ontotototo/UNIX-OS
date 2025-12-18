@@ -12,7 +12,7 @@ LOCK_FILE="$DATA_DIR/.lockfile"
 while true; do
     TARGET_FILE=""
 
-    {   flock -x 33
+    {   flock -x 83
         i=1
         while true; do
             NAME=$(printf "%03d" $i)  
