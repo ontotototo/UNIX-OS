@@ -72,7 +72,7 @@ string sha1_calculate(const string& path) {
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        cerr << "Ошибка: каталог не выбран. Добавьте аргумент - директорию\n ";
+        cerr << "Ошибка: каталог не выбран. Добавьте аргумент - директорию\n";
         return 1;
     }
 
@@ -86,17 +86,31 @@ int main(int argc, char* argv[]) {
         return 3;
     }
 
-    unordered_map<string, string> hash_to_first_path;
-    int files_processed = 0;
-    int links_created = 0;
-
-    cout << "Сканирование каталога: " << root_path << "\n";
+    unordered_map<uintmax_t, vector<string>> size_to_paths;
+    cout << "Сканирование каталога и группировка по размеру...\n";
 
     try {
         for (const auto& entry : fs::recursive_directory_iterator(root_path)) {
             if (!entry.is_regular_file()) continue;
+            uintmax_t size = entry.file_size();               
+            size_to_paths[size].push_back(entry.path().string());
+        }
+    } catch (const fs::filesystem_error& e) {
+        cerr << "Ошибка обхода каталога: " << e.what() << "\n";
+        return 4;
+    }
 
-            string path = entry.path().string();
+    unordered_map<string, string> hash_to_first_path;
+    int files_processed = 0;
+    int links_created = 0;
+
+    cout << "Хеширование файлов с одинаковым размером...\n";
+
+    for (auto& group : size_to_paths) {
+        const auto& paths = group.second;
+        if (paths.size() == 1) continue; 
+
+        for (const string& path : paths) {
             string hash = sha1_calculate(path);
             if (hash.empty()) continue;
 
@@ -114,28 +128,23 @@ int main(int argc, char* argv[]) {
                     cerr << "Предупреждение: не удалось получить stat для '" << path << "' или '" << first_path << "'\n";
                     continue;
                 }
-
-                if (st_orig.st_dev == st_curr.st_dev && st_orig.st_ino == st_curr.st_ino) {
+              
+                if (st_orig.st_dev != st_curr.st_dev || st_orig.st_ino != st_curr.st_ino) {
+                    if (unlink(path.c_str()) != 0) {
+                        cerr << "Ошибка: не удалось удалить '" << path << "' перед созданием hard link\n";
+                        continue;
+                    }
+                    if (link(first_path.c_str(), path.c_str()) != 0) {
+                        cerr << "Ошибка: не удалось создать hard link от '" << first_path << "' к '" << path << "'\n";
+                        continue;
+                    }
+                    links_created++;
+                    cout << "[!!!] '" << path << "' заменён hard link на '" << first_path << "'\n";
+                } else {
                     cout << "[!] '" << path << "' уже hard link на '" << first_path << "'.\n";
-                    continue;
                 }
-
-                if (unlink(path.c_str()) != 0) {
-                    cerr << "Ошибка: не удалось удалить '" << path << "' перед созданием hard link\n";
-                    continue;
-                }
-
-                if (link(first_path.c_str(), path.c_str()) != 0) {
-                    cerr << "Ошибка: не удалось создать hard link от '" << first_path << "' к '" << path << "'\n";
-                    continue;
-                }
-                links_created++;
-                cout << "[!!!] '" << path << "' заменён hard link на '" << first_path << "'\n";
             }
         }
-    } catch (const fs::filesystem_error& e) {
-        cerr << "Ошибка обхода каталога: " << e.what() << "\n";
-        return 4;
     }
 
     cout << "Обработано файлов: " << files_processed << "\n"
