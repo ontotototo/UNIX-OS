@@ -18,7 +18,7 @@
 
 static int venus_proc_show(struct seq_file *m, void *v)
 {
-    const time64_t next_return_ts = 1828512000LL; /* 2027-12-12 00:00:00 UTC */
+    const time64_t next_return_ts = 1828512000LL; // 2027-12-12 00:00:00 UTC 
     time64_t now = ktime_get_real_seconds();
 
     if (now >= next_return_ts) {
